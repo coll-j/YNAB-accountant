@@ -1,0 +1,21 @@
+# OpenClaw YNAB Agent — Dependencies
+
+# Google Gmail API
+google-api-python-client==2.118.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
+
+# WhatsApp via Twilio
+twilio==9.0.0
+
+# Scheduling
+schedule==1.2.1
+
+# Flask (webhook server for WA replies)
+flask==3.0.2
+
+# YAML config
+pyyaml==6.0.1
+
+# HTTP client
+requests==2.31.0
