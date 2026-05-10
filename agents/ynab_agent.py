@@ -18,7 +18,11 @@ YNAB_BASE = "https://api.youneedabudget.com/v1"
 
 
 class YNABAgent:
-    def __init__(self, api_token: str, budget_id: str, account_id: str):
+    def __init__(
+            self, 
+            api_token: str, 
+            budget_id: str, 
+            account_id: str):
         
         self.ynab_configuration = ynab.Configuration(access_token=api_token)
         self.ynab_client = ynab.ApiClient(self.ynab_configuration)
@@ -47,7 +51,7 @@ class YNABAgent:
             "transaction": {
                 "account_id": self.account_id,
                 "date": date,
-                "amount": -abs(amount)*1000,   # always outflow
+                "amount": -abs(amount)*1000,   # always outflow, convert to milliunits
                 "category_id": category_id,
                 "cleared": TransactionClearedStatus.CLEARED,
                 "approved": True,
@@ -130,24 +134,6 @@ class YNABAgent:
             logger.error("Failed to fetch account balance")
             return {"balance": 0, "cleared_balance": 0, "uncleared_balance": 0}
 
-    def reconcile_account(self, actual_balance_milliunits: int):
-        """
-        Marks all cleared transactions as reconciled and creates a
-        reconciliation adjustment if the balance doesn't match.
-        Uses YNAB's reconcile endpoint.
-        """
-        resp = self.session.post(
-            f"{YNAB_BASE}/budgets/{self.budget_id}/accounts/{self.account_id}/reconcile",
-            json={"current_balance": actual_balance_milliunits},
-        )
-        resp.raise_for_status()
-        data = resp.json()["data"]
-        logger.info(f"Reconciliation complete. Adjustment: {data.get('reconciliation_transaction', {})}")
-        return data
-
-    def mark_cleared(self, transaction_id: str):
-        """Mark a single transaction as cleared."""
-        self.update_transaction(transaction_id, cleared="cleared")
 
     def get_today_transactions(self) -> list[dict]:
         """Fetch all transactions for the mbanking account from today."""
@@ -160,33 +146,4 @@ class YNABAgent:
         resp.raise_for_status()
         return resp.json()["data"]["transactions"]
 
-    # ---- Helpers ----
 
-    def _get_categories(self) -> list[dict]:
-        """Fetch all categories (cached per instance)."""
-        if not hasattr(self, "_categories_cache"):
-            resp = self.session.get(
-                f"{YNAB_BASE}/budgets/{self.budget_id}/categories"
-            )
-            resp.raise_for_status()
-            groups = resp.json()["data"]["category_groups"]
-            self._categories_cache = [
-                cat
-                for group in groups
-                for cat in group["categories"]
-                if not cat["deleted"] and not cat["hidden"]
-            ]
-        return self._categories_cache
-
-    def _resolve_category_id(self, category_name: str) -> Optional[str]:
-        """Find YNAB category ID by name (case-insensitive partial match)."""
-        name_lower = category_name.lower()
-        for cat in self._get_categories():
-            if cat["name"].lower() == name_lower:
-                return cat["id"]
-        # Try partial match
-        for cat in self._get_categories():
-            if name_lower in cat["name"].lower():
-                return cat["id"]
-        logger.warning(f"Category '{category_name}' not found in YNAB")
-        return None

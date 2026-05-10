@@ -27,70 +27,18 @@ scheduler:
 # ============================================================
 # Category/Payee Rules
 # Each rule maps a keyword (found in transaction notes) to a
-# YNAB category name and payee name.
+# YNAB category ID and payee ID.
 # Matching is case-insensitive substring match.
 # First match wins — order matters.
 # ============================================================
 rules:
-  - keyword: "grab"
-    category: "Transportation"
-    payee: "Grab"
+  - keywords: ["JustGrab"]
+    category_id: "Transportation"
+    payee_id: "Grab"
 
-  - keyword: "gofood"
-    category: "Dining Out"
-    payee: "GoFood"
-
-  - keyword: "shopee"
-    category: "Shopping"
-    payee: "Shopee"
-
-  - keyword: "lazada"
-    category: "Shopping"
-    payee: "Lazada"
-
-  - keyword: "tokopedia"
-    category: "Shopping"
-    payee: "Tokopedia"
-
-  - keyword: "netflix"
-    category: "Subscriptions"
-    payee: "Netflix"
-
-  - keyword: "spotify"
-    category: "Subscriptions"
-    payee: "Spotify"
-
-  - keyword: "alfamart"
-    category: "Groceries"
-    payee: "Alfamart"
-
-  - keyword: "indomaret"
-    category: "Groceries"
-    payee: "Indomaret"
-
-  - keyword: "transfer"
-    category: "Transfers"
-    payee: "Bank Transfer"
-
-  - keyword: "electricity"
-    category: "Utilities"
-    payee: "PLN / Electricity"
-
-  - keyword: "water"
-    category: "Utilities"
-    payee: "Water Bill"
-
-  - keyword: "internet"
-    category: "Subscriptions"
-    payee: "Internet Provider"
-
-  - keyword: "rent"
-    category: "Housing"
-    payee: "Rent"
-
-  - keyword: "coffee"
-    category: "Dining Out"
-    payee: "Coffee Shop"
+  - keywords: ["GrabFood"]
+    category_id: "Dining Out"
+    payee_id: "GoFood"
 
   # Add more rules here...
 

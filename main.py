@@ -91,16 +91,16 @@ def process_payment_email(email: dict):
 
     # 2. Resolve category
     match = rules.match(parsed.notes)
-    category = match.category if match else None
-    payee = match.payee if match else "Unknown"
+    category_id = match.category_id if match else None
+    payee_id = match.payee_id if match else None
 
     # 3. Record in YNAB
     try:
         ynab_id = ynab.create_transaction(
             date=parsed.date,
             amount=parsed.amount,
-            payee_name=payee,
-            category_name=category,
+            payee_id=payee_id,
+            category_id=category_id,
             memo=parsed.notes,
         )
     except Exception as e:
@@ -115,15 +115,15 @@ def process_payment_email(email: dict):
         currency=parsed.currency,
         date=parsed.date,
         notes=parsed.notes,
-        category=category,
-        payee=payee,
+        category_id=category_id,
+        payee_id=payee_id,
         email_id=email["id"],
         recorded_at=datetime.now().isoformat(),
     )
     state.add_transaction(txn)
 
     if match:
-        logger.info(f"✅ Recorded: {payee} | {parsed.currency} {parsed.raw_amount:,.0f} → {category}")
+        logger.info(f"✅ Recorded: {payee_id} | {parsed.currency} {parsed.raw_amount:,.0f} → {category_id}")
     else:
         logger.info(f"⚠️  Recorded (no category): {parsed.raw_amount:,.0f} | notes='{parsed.notes}'")
 
@@ -205,16 +205,16 @@ def handle_wa_reply(reply_text: str):
     for idx, update in parsed_reply["category_updates"].items():
         if 1 <= idx <= len(undefined):
             txn = undefined[idx - 1]
-            category = update["category"]
-            payee = update["payee"]
+            category_id = update["category_id"]
+            payee_id = update["payee_id"]
 
             ynab.update_transaction(
                 transaction_id=txn.ynab_id,
-                category_name=category,
-                payee_name=payee,
+                category_id=category_id,
+                payee_id=payee_id,
             )
-            state.update_transaction(txn.ynab_id, category=category, payee=payee)
-            logger.info(f"Updated txn {txn.ynab_id}: {category} / {payee}")
+            state.update_transaction(txn.ynab_id, category_id=category_id, payee_id=payee_id)
+            logger.info(f"Updated txn {txn.ynab_id}: {category_id} / {payee_id}")
 
     # --- Reconcile if balance provided ---
     actual_balance = parsed_reply.get("actual_balance")

@@ -24,8 +24,8 @@ class Transaction:
     currency: str
     date: str
     notes: str
-    category: Optional[str]        # None if not resolved
-    payee: Optional[str]
+    category_id: Optional[str]        # None if not resolved
+    payee_id: Optional[str]
     email_id: str
     recorded_at: str               # ISO datetime
     reconciled: bool = False
@@ -121,7 +121,7 @@ class StateManager:
 
     def get_undefined_transactions(self) -> list[Transaction]:
         """Transactions with no category resolved."""
-        return [t for t in self._state.transactions if t.category is None]
+        return [t for t in self._state.transactions if t.category_id is None]
 
     def get_total_recorded(self) -> float:
         """Sum of all transaction amounts (raw)."""
