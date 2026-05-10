@@ -5,3 +5,5 @@ if __name__ == "__main__":
     emails = test_email_fetch()
     print("Running email parsing test...")
     test_email_parsing(emails)
+
+
