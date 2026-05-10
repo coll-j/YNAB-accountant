@@ -5,8 +5,10 @@ Docs: https://api.youneedabudget.com/v1
 """
 import logging
 from typing import Optional
+import rich
 import ynab
 from ynab.models.post_transactions_wrapper import PostTransactionsWrapper
+from ynab.models.transaction_cleared_status import TransactionClearedStatus as TransactionClearedStatus
 
 import requests
 
@@ -49,23 +51,33 @@ class YNABAgent:
             "transaction": {
                 "account_id": self.account_id,
                 "date": date,
-                "amount": -abs(amount),   # always outflow
-                "payee_name": payee_name or "Unknown",
+                "amount": -abs(amount)*1000,   # always outflow
                 "category_id": category_id,
-                "memo": memo,
-                "cleared": "uncleared",
-                "approved": False,
+                "cleared": TransactionClearedStatus.CLEARED,
+                "approved": True,
             }
         }
 
-        resp = self.session.post(
-            f"{YNAB_BASE}/budgets/{self.budget_id}/transactions",
-            json=payload,
-        )
-        resp.raise_for_status()
-        txn_id = resp.json()["data"]["transaction"]["id"]
-        logger.info(f"Created YNAB transaction {txn_id} for {payee_name} ({amount})")
-        return txn_id
+        if payee_id:
+            payload["transaction"]["payee_id"] = payee_id
+        if memo:
+            payload["transaction"]["memo"] = memo
+
+        data = ynab.PostTransactionsWrapper().from_dict(payload) # PostTransactionsWrapper | The transaction or transactions to create.  To create a single transaction you can specify a value for the `transaction` object and to create multiple transactions you can specify an array of `transactions`.  It is expected that you will only provide a value for one of these objects.
+
+        # Create an instance of the API class
+        api_instance = ynab.TransactionsApi(self.ynab_client)
+        try:
+            # Create a single transaction or multiple transactions
+            api_response = api_instance.create_transaction(self.budget_id, data)
+            print("The response of TransactionsApi->create_transaction:\n")
+            logger.info(f"Created YNAB transaction with details:")
+            logger.info(rich.print(api_response.data.transaction))
+            return api_response.data.transaction.id
+        
+        except Exception as e:
+            logger.info("Exception when calling TransactionsApi->create_transaction: %s\n" % e)
+            return -1
 
     def update_transaction(
         self,
