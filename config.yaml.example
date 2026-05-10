@@ -1,0 +1,46 @@
+# ============================================================
+# OpenClaw YNAB Agent — Configuration
+# ============================================================
+
+ynab:
+  api_token: "YOUR_YNAB_PERSONAL_ACCESS_TOKEN"
+  budget_id: "YOUR_BUDGET_ID"           # find in YNAB URL
+  account_id: "YOUR_MBANKING_ACCOUNT_ID"  # the mobile banking account
+
+gmail:
+  credentials_file: "credentials/gmail_oauth.json"
+  token_file: "credentials/gmail_token.json"
+  trigger_subject_keyword: "confirmation"
+  poll_interval_seconds: 60             # how often to check for new emails
+
+whatsapp:
+  provider: "twilio"                    # or "meta" for WhatsApp Business API
+  account_sid: "YOUR_TWILIO_ACCOUNT_SID"
+  auth_token: "YOUR_TWILIO_AUTH_TOKEN"
+  from_number: "whatsapp:+14155238886"  # Twilio sandbox or your WA Business number
+  to_number: "whatsapp:+YOUR_NUMBER"   # your personal number
+
+scheduler:
+  daily_summary_time: "23:59"
+  timezone: "Asia/Bangkok"
+
+# ============================================================
+# Category/Payee Rules
+# Each rule maps a keyword (found in transaction notes) to a
+# YNAB category ID and payee ID.
+# Matching is case-insensitive substring match.
+# First match wins — order matters.
+# ============================================================
+rules:
+  - keywords: ["JustGrab"]
+    category_id: "Transportation"
+    payee_id: "Grab"
+
+  - keywords: ["GrabFood"]
+    category_id: "Dining Out"
+    payee_id: "GoFood"
+
+  # Add more rules here...
+
+# Fallback: if notes are empty or no rule matches, category stays undefined
+# and the transaction is flagged for manual input in the daily summary
