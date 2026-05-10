@@ -5,6 +5,8 @@ Docs: https://api.youneedabudget.com/v1
 """
 import logging
 from typing import Optional
+import ynab
+from ynab.models.post_transactions_wrapper import PostTransactionsWrapper
 
 import requests
 
@@ -14,14 +16,19 @@ YNAB_BASE = "https://api.youneedabudget.com/v1"
 
 
 class YNABAgent:
-    def __init__(self, api_token: str, budget_id: str, account_id: str):
+    def __init__(self, api_token: str, budget_id: str):
+        
+        self.ynab_configuration = ynab.Configuration(access_token=api_token)
+        self.ynab_client = ynab.ApiClient(self.ynab_configuration)
         self.budget_id = budget_id
-        self.account_id = account_id
-        self.session = requests.Session()
-        self.session.headers.update({
-            "Authorization": f"Bearer {api_token}",
-            "Content-Type": "application/json",
-        })
+
+        # self.budget_id = budget_id
+        # self.account_id = account_id
+        # self.session = requests.Session()
+        # self.session.headers.update({
+        #     "Authorization": f"Bearer {api_token}",
+        #     "Content-Type": "application/json",
+        # })
 
     # ---- Core methods ----
 
@@ -29,16 +36,14 @@ class YNABAgent:
         self,
         date: str,           # "YYYY-MM-DD"
         amount: int,         # milliunits (negative = outflow)
-        payee_name: str,
-        category_name: Optional[str],
-        memo: str,
+        payee_id: Optional[str],
+        category_id: Optional[str],
+        memo: Optional[str],
     ) -> Optional[str]:
         """
         Creates a transaction and returns the YNAB transaction ID.
         Amount should be negative for spending (outflow).
         """
-        # Resolve category_id from name
-        category_id = self._resolve_category_id(category_name) if category_name else None
 
         payload = {
             "transaction": {
