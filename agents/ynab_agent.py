@@ -22,15 +22,8 @@ class YNABAgent:
         
         self.ynab_configuration = ynab.Configuration(access_token=api_token)
         self.ynab_client = ynab.ApiClient(self.ynab_configuration)
+        self.transactions_api = ynab.TransactionsApi(self.ynab_client)
         self.budget_id = budget_id
-
-        # self.budget_id = budget_id
-        # self.account_id = account_id
-        # self.session = requests.Session()
-        # self.session.headers.update({
-        #     "Authorization": f"Bearer {api_token}",
-        #     "Content-Type": "application/json",
-        # })
 
     # ---- Core methods ----
 
@@ -66,10 +59,9 @@ class YNABAgent:
         data = ynab.PostTransactionsWrapper().from_dict(payload) # PostTransactionsWrapper | The transaction or transactions to create.  To create a single transaction you can specify a value for the `transaction` object and to create multiple transactions you can specify an array of `transactions`.  It is expected that you will only provide a value for one of these objects.
 
         # Create an instance of the API class
-        api_instance = ynab.TransactionsApi(self.ynab_client)
         try:
             # Create a single transaction or multiple transactions
-            api_response = api_instance.create_transaction(self.budget_id, data)
+            api_response = self.transactions_api.create_transaction(self.budget_id, data)
             print("The response of TransactionsApi->create_transaction:\n")
             logger.info(f"Created YNAB transaction with details:")
             logger.info(rich.print(api_response.data.transaction))
@@ -103,12 +95,15 @@ class YNABAgent:
         if not updates:
             return
 
-        resp = self.session.put(
-            f"{YNAB_BASE}/budgets/{self.budget_id}/transactions/{transaction_id}",
-            json={"transaction": updates},
-        )
-        resp.raise_for_status()
-        logger.info(f"Updated YNAB transaction {transaction_id}: {updates}")
+        data = ynab.PutTransactionWrapper(transaction=updates)
+
+        try:
+            # Update a transaction
+            api_response = self.transactions_api.update_transaction(self.budget_id, transaction_id, data)
+            print("The response of TransactionsApi->update_transaction:\n")
+            logger.info(rich.print(api_response.data.transaction))
+        except Exception as e:
+            print("Exception when calling TransactionsApi->update_transaction: %s\n" % e)
 
     def get_account_balance(self) -> float:
         """Returns the cleared balance of the account in human units."""
