@@ -18,12 +18,15 @@ YNAB_BASE = "https://api.youneedabudget.com/v1"
 
 
 class YNABAgent:
-    def __init__(self, api_token: str, budget_id: str):
+    def __init__(self, api_token: str, budget_id: str, account_id: str):
         
         self.ynab_configuration = ynab.Configuration(access_token=api_token)
         self.ynab_client = ynab.ApiClient(self.ynab_configuration)
-        self.transactions_api = ynab.TransactionsApi(self.ynab_client)
         self.budget_id = budget_id
+        self.account_id = account_id
+
+        self.transactions_api = ynab.TransactionsApi(self.ynab_client)
+        self.account_api = ynab.AccountsApi(self.ynab_client)
 
     # ---- Core methods ----
 
@@ -107,13 +110,25 @@ class YNABAgent:
 
     def get_account_balance(self) -> float:
         """Returns the cleared balance of the account in human units."""
-        resp = self.session.get(
-            f"{YNAB_BASE}/budgets/{self.budget_id}/accounts/{self.account_id}"
-        )
-        resp.raise_for_status()
-        account = resp.json()["data"]["account"]
-        # YNAB balance is in milliunits
-        return account["cleared_balance"] / 1000
+        try:
+            # Get an account
+            api_response = self.account_api.get_account_by_id(self.budget_id, self.account_id)
+            print("The response of AccountsApi->get_account_by_id:\n")
+            rich.print(api_response)
+
+            balances = {
+                "balance": api_response.data.account.balance / 1000,  # convert from milliunits to units
+                "cleared_balance": api_response.data.account.cleared_balance / 1000,
+                "uncleared_balance": api_response.data.account.uncleared_balance / 1000,
+            }
+
+            logger.info(f"Fetched account balance: {balances}")
+            return balances
+        
+        except Exception as e:
+            print("Exception when calling AccountsApi->get_account_by_id: %s\n" % e)
+            logger.error("Failed to fetch account balance")
+            return {"balance": 0, "cleared_balance": 0, "uncleared_balance": 0}
 
     def reconcile_account(self, actual_balance_milliunits: int):
         """
